@@ -1,0 +1,78 @@
+C51 COMPILER V9.60.7.0   TMR1                                                              08/08/2024 17:06:15 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TMR1
+OBJECT MODULE PLACED IN .\Release\Objects\tmr1.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Hardware\tmr1.c LARGE OPTIMIZE(8,SIZE) BROWSE INTVECTOR(0X000C) IN
+                    -CDIR(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) INTERVAL(3) DEBUG OBJECT
+                    -EXTEND PRINT(.\Release\Listings\tmr1.lst) OBJECT(.\Release\Objects\tmr1.obj)
+
+line level    source
+
+   1          #include "tmr1.h"
+   2          
+   3          #define TMR1_CNT_TIME (SYSCLK / 8 / 32000 - 1) // ¼ÆÊýÖÜÆÚ 32KHz£¬xxms²úÉúÒ»´ÎÖÐ¶Ï
+   4          
+   5          void tmr1_pwm_config(void)
+   6          {
+   7   1          TMR_ALLCON = TMR1_CNT_CLR(0x1);                           // Çå³ý¼ÆÊýÖµ
+   8   1          TMR1_PRH = TMR_PERIOD_VAL_H((TMR1_CNT_TIME >> 8) & 0xFF); // ÖÜÆÚÖµ
+   9   1          TMR1_PRL = TMR_PERIOD_VAL_L((TMR1_CNT_TIME >> 0) & 0xFF);
+  10   1          TMR1_PWMH = TMR_PWM_VAL_H(((TMR1_CNT_TIME / 2) >> 8) & 0xFF); // Õ¼¿Õ±ÈÉèÖÃÖµ£¨TMR1_CNT_TIME / 2£¬µÈÓÚ
+             -50%Õ¼¿Õ±È£©
+  11   1          TMR1_PWML = TMR_PWM_VAL_L(((TMR1_CNT_TIME / 2) >> 0) & 0xFF);
+  12   1          TMR1_CONH = TMR_PRD_PND(0x1) | TMR_PRD_IRQ_EN(0x1);                               // Ê¹ÄÜ¼ÆÊýÖÐ¶Ï
+  13   1          TMR1_CONL = /*TMR_SOURCE_SEL(0x7) |*/ TMR_PRESCALE_SEL(0x03) | TMR_MODE_SEL(0x2); // Ñ¡ÔñÏµÍ³Ê±ÖÓ£¬16·
+             -ÖÆµ£¬PWMÄ£Ê½
+  14   1          TMR1_CONL |= TMR_SOURCE_SEL(0x05);                                                // ÅäÖÃ¶¨Ê±Æ÷µÄÊ±ÖÓÔ
+             -´£¬²»ÓÃÈÎºÎÊ±ÖÓ
+  15   1      }
+  16          
+  17          /**
+  18           * @brief ¿ªÆô¶¨Ê±Æ÷TMR1£¬¿ªÊ¼¼ÆÊ±
+  19           */
+  20          void tmr1_enable(void)
+  21          {
+  22   1          // ÖØÐÂ¸øTMR1ÅäÖÃÊ±ÖÓ
+  23   1          TMR1_CONL &= ~(TMR_SOURCE_SEL(0x07)); // Çå³ý¶¨Ê±Æ÷µÄÊ±ÖÓÔ´ÅäÖÃ¼Ä´æÆ÷
+  24   1          TMR1_CONL |= TMR_SOURCE_SEL(0x06);    // ÅäÖÃ¶¨Ê±Æ÷µÄÊ±ÖÓÔ´£¬Ê¹ÓÃÏµÍ³Ê±ÖÓ
+  25   1      }
+  26          
+  27          /**
+  28           * @brief ¹Ø±Õ¶¨Ê±Æ÷£¬Çå¿Õ¼ÆÊýÖµ
+  29           */
+  30          void tmr1_disable(void)
+  31          {
+  32   1          // ²»¸ø¶¨Ê±Æ÷Ìá¹©Ê±ÖÓ£¬ÈÃËüÍ£Ö¹¼ÆÊý
+  33   1          TMR1_CONL &= ~(TMR_SOURCE_SEL(0x07)); // Çå³ý¶¨Ê±Æ÷µÄÊ±ÖÓÔ´ÅäÖÃ¼Ä´æÆ÷
+  34   1          TMR1_CONL |= TMR_SOURCE_SEL(0x05);    // ÅäÖÃ¶¨Ê±Æ÷µÄÊ±ÖÓÔ´£¬²»ÓÃÈÎºÎÊ±ÖÓ
+  35   1      
+  36   1          // Çå³ý¶¨Ê±Æ÷µÄ¼ÆÊýÖµ
+  37   1          TMR1_CNTL = 0;
+  38   1          TMR1_CNTH = 0;
+  39   1      }
+  40          
+  41          // ²ÎÊý£ºduty--Õ¼¿Õ±È£¬´«²ÎÊ±°üÀ¨Ð¡ÊýµãºóÁ½Î»µÄÊý£¬ÀýÈçduty=234£¬Õ¼¿Õ±ÈÎª23.4%
+  42          void tmr1_set_pwm_duty(u16 duty)
+  43          {
+  44   1          u16 tmp = TMR1_CNT_TIME * duty / 1000;
+  45   1          TMR1_PWMH = TMR_PWM_VAL_H(((tmp) >> 8) & 0xFF); // Õ¼¿Õ±ÈÉèÖÃÖµ£¨TMR1_CNT_TIME / tmp£¬µÈÓÚduty%Õ¼¿Õ±È£
+             -©
+  46   1          TMR1_PWML = TMR_PWM_VAL_L(((tmp) >> 0) & 0xFF);
+  47   1      }
+
+
+C51 COMPILER V9.60.7.0   TMR1                                                              08/08/2024 17:06:15 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     88    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

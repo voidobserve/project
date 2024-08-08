@@ -1,0 +1,64 @@
+C51 COMPILER V9.60.7.0   MY_SYS                                                            08/08/2024 17:06:15 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MY_SYS
+OBJECT MODULE PLACED IN .\Release\Objects\my_sys.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\App\my_sys.c LARGE OPTIMIZE(8,SIZE) BROWSE INTVECTOR(0X000C) INCDI
+                    -R(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) INTERVAL(3) DEBUG OBJECTEXT
+                    -END PRINT(.\Release\Listings\my_sys.lst) OBJECT(.\Release\Objects\my_sys.obj)
+
+line level    source
+
+   1          // encode UTF-8
+   2          #include "my_sys.h"
+   3          
+   4          // 灯光控制模式
+   5          // 由上电时对黄色灯的引脚检测而得
+   6          // 若检测到高电平，则接下来触摸按键可以控制开关灯（light_ctl_mode = 1）
+   7          // 若检测到低电平，则接下来触摸按键不仅可以控制开关灯，还可以控制三种颜�
+             -��灯光的切换（light_ctl_mode = 0）
+   8          bit light_ctl_mode = 0;
+   9          
+  10          // 灯光按键是否有按下的标志位
+  11          //  0--未按下，1--按下
+  12          volatile bit is_touch_key_light_press = 0; 
+  13          
+  14          // 灯光按键是否长按的标志位
+  15          // 0--未长按，1--长按
+  16          // volatile bit is_touch_key_light_hold = 0;
+  17          
+  18          // 电源指示灯状态，0--关闭，1--开启
+  19          bit light_on_off_status = 0;
+  20          
+  21          // 控制灯光的标志位
+  22          volatile u8 light_control_flag = 0; 
+  23          
+  24          // 三色切换模式中，当前灯光的状态
+  25          volatile u8 light_muilty_cur_status = LIGHT_MUILTY_CUR_OFF;
+  26          
+  27          // 用于标志当前是在增大亮度还是减少亮度的标志位
+  28          // 0--减少亮度，1--增大亮度
+  29          bit light_adjust_add_sub_flag = 0; // 最开始灯是最亮的，应该减小亮度
+  30          
+  31          // 当前驱动灯光的占空比，精确到小数点后1位
+  32          // 例如 cur_pwm_duty = 254，则占空比为25.4%
+  33          u16 cur_pwm_duty = 0;
+  34          
+  35          // 独立保存的驱动灯光的占空比（默认为最亮），精确到小数点后1位
+  36          u16 cur_white_duty = PWM_MAX_DUTY_SINGLE_LIGHT; 
+  37          u16 cur_yellow_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
+  38          u16 cur_yellow_white_duty = PWM_MAX_DUTY_MUILTY_LIGHT;
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     10    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      4    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

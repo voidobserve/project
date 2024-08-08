@@ -1,0 +1,114 @@
+C51 COMPILER V9.60.7.0   ADC                                                               08/08/2024 17:06:15 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE ADC
+OBJECT MODULE PLACED IN .\Release\Objects\adc.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Hardware\adc.c LARGE OPTIMIZE(8,SIZE) BROWSE INTVECTOR(0X000C) INC
+                    -DIR(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) INTERVAL(3) DEBUG OBJECTE
+                    -XTEND PRINT(.\Release\Listings\adc.lst) OBJECT(.\Release\Objects\adc.obj)
+
+line level    source
+
+   1          // encoding GB2312
+   2          #include "adc.h"
+   3          
+   4          volatile u16 adc_val = 0; // adc值，0~4095
+   5          
+   6          // adc配置
+   7          void adc_config(void)
+   8          {
+   9   1          // P16--14脚
+  10   1          P1_MD1 |= GPIO_P16_MODE_SEL(0x3); // 模拟模式
+  11   1      
+  12   1          // ADC配置
+  13   1          ADC_ACON1 &= ~(ADC_VREF_SEL(0x7) | ADC_EXREF_SEL(0x1)); // 清除电压选择，关闭外部参考电压
+  14   1          ADC_ACON1 &= ~(ADC_INREF_SEL(0x01));                    // 关闭内部参考电压
+  15   1          ADC_ACON1 |= ADC_VREF_SEL(0x06) | ADC_TEN_SEL(0x3);     // 选择内部参考电压VCCA，关闭测试信号
+  16   1      
+  17   1          ADC_ACON0 = ADC_CMP_EN(0x1) |  // 打开ADC中的CMP使能信号
+  18   1                      ADC_BIAS_EN(0x1) | // 打开ADC偏置电流能使信号
+  19   1                      ADC_BIAS_SEL(0x1); // 偏置电流选择：1x
+  20   1      
+  21   1          // P16 通路
+  22   1          ADC_CHS0 = ADC_ANALOG_CHAN(0x0E) |
+  23   1                     ADC_EXT_SEL(0x0); // 选择外部通路（引脚作为通道）
+  24   1      
+  25   1          ADC_CFG0 |= ADC_CHAN0_EN(0x1) | // 使能通道0转换
+  26   1                      ADC_EN(0x1);        // 使能A/D转换
+  27   1          delay_ms(1);                    // 等待ADC模块配置稳定，需要等待20us以上
+  28   1      }
+  29          
+  30          // 获取adc值，存放到变量adc_val中
+  31          u16 __adc_getval(void)
+  32          {
+  33   1          ADC_CFG0 |= ADC_CHAN0_TRG(0x1); // 触发ADC0转换
+  34   1          while (!(ADC_STA & ADC_CHAN0_DONE(0x1)))
+  35   1              ;                                           // 等待转换完成
+  36   1          ADC_STA = ADC_CHAN0_DONE(0x1);                  // 清除ADC0转换完成标志位
+  37   1          return ((ADC_DATAH0 << 4) | (ADC_DATAL0 >> 4)); // 读取ADC0的值
+  38   1      }
+  39          
+  40          // 采集多次adc值，最终得到滤波后的adc值
+  41          void adc_getval(void)
+  42          {
+  43   1          // u8 i = 0;
+  44   1          // u32 tmp = 0;
+  45   1          // for (i = 0; i < 32; i++)
+  46   1          // {
+  47   1          //     tmp += __adc_getval();
+  48   1      
+  49   1          //     if (i >= 1)
+  50   1          //     {
+  51   1          //         tmp >>= 1; // 相当于tmp /= 2;
+  52   1          //     }
+  53   1          // }
+C51 COMPILER V9.60.7.0   ADC                                                               08/08/2024 17:06:15 PAGE 2   
+
+  54   1      
+  55   1          // adc_val = (u16)tmp;
+  56   1      
+  57   1          u8 cnt = 0; // adc采集次数的计数
+  58   1          u32 g_temp_value = 0;
+  59   1          u32 g_tmpbuff = 0;
+  60   1          u32 g_adcmax = 0;
+  61   1          u32 g_adcmin = 0xFFFF;
+  62   1      
+  63   1          for (cnt = 0; cnt < 20; cnt++)
+  64   1          {
+  65   2              g_temp_value = __adc_getval();
+  66   2              if (cnt < 2)
+  67   2                  continue; // 丢弃前两次采样的
+  68   2              if (g_temp_value > g_adcmax)
+  69   2                  g_adcmax = g_temp_value; // 最大
+  70   2              if (g_temp_value < g_adcmin)
+  71   2                  g_adcmin = g_temp_value; // 最小
+  72   2              g_tmpbuff += g_temp_value;
+  73   2          }
+  74   1          g_tmpbuff -= g_adcmax;           // 去掉一个最大
+  75   1          g_tmpbuff -= g_adcmin;           // 去掉一个最小
+  76   1          g_temp_value = (g_tmpbuff >> 4); // 除以16，取平均值
+  77   1      
+  78   1          adc_val = g_temp_value;
+  79   1      }
+  80          
+  81          #if USE_MY_DEBUG
+              void adc_showval(void)
+              {
+                  // 连接串口查看ADC值
+                  printf("adc_val = %d\r\n", adc_val);
+              }
+              #endif // USE_MY_DEBUG
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    318    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2      17
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

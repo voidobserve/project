@@ -1,0 +1,47 @@
+C51 COMPILER V9.60.7.0   SEND_DATA                                                         08/08/2024 17:06:15 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SEND_DATA
+OBJECT MODULE PLACED IN .\Release\Objects\send_data.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\App\send_data.c LARGE OPTIMIZE(8,SIZE) BROWSE INTVECTOR(0X000C) IN
+                    -CDIR(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) INTERVAL(3) DEBUG OBJECT
+                    -EXTEND PRINT(.\Release\Listings\send_data.lst) OBJECT(.\Release\Objects\send_data.obj)
+
+line level    source
+
+   1          // encode UTF-8
+   2          // 单线发送数据的源文件
+   3          #include "send_data.h"
+   4          
+   5          // void send_byte(u8 send_data)
+   6          // {
+   7          //     uart1_sendbyte(send_data);
+   8          // }
+   9          
+  10          // 通过串口发送按键状态
+  11          // 参数1： key_index--按键序号
+  12          void send_key_status(u8 key_index)
+  13          {
+  14   1          u8 tmp = 0;
+  15   1          u16 send_datas = 0;
+  16   1          tmp |= ((u8)light_on_off_status << 7) | (key_index << 4);
+  17   1          send_datas |= tmp << 8;      // 高8位存放原码
+  18   1          send_datas |= (~tmp & 0xFF); // 低8位存放反码
+  19   1          uart1_sendbyte(0xA5);        // 发送格式头
+  20   1          uart1_sendbyte((send_datas >> 8) & 0xFF);
+  21   1          uart1_sendbyte(send_datas & 0xFF); // 发送反码
+  22   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     66    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

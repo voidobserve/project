@@ -1,0 +1,183 @@
+C51 COMPILER V9.60.7.0   LIGHT                                                             08/08/2024 17:06:14 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE LIGHT
+OBJECT MODULE PLACED IN .\Release\Objects\light.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Hardware\light.c LARGE OPTIMIZE(8,SIZE) BROWSE INTVECTOR(0X000C) I
+                    -NCDIR(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) INTERVAL(3) DEBUG OBJEC
+                    -TEXTEND PRINT(.\Release\Listings\light.lst) OBJECT(.\Release\Objects\light.obj)
+
+line level    source
+
+   1          // encode UTF-8
+   2          // 指示灯的驱动源程序
+   3          #include "light.h"
+   4          
+   5          // 检测灯光控制的模式
+   6          void check_light_ctl_mode(void)
+   7          {
+   8   1      #ifdef CIRCUIT_BOARD
+   9   1          p27_input_config(); // P27，与黄灯相连的引脚配置成输入上拉
+  10   1          if (P27)
+  11   1          {
+  12   2              light_ctl_mode = LIGHT_CTL_MODE_SINGLE; // 接下来触摸按键可以控制开关灯（light_ctl_
+             -mode = 1）
+  13   2          }
+  14   1          else
+  15   1          {
+  16   2              light_ctl_mode = LIGHT_CTL_MODE_MUILTY; // 接下来触摸按键不仅可以控制开关灯，还�
+             -��以控制三种颜色灯光的切换（light_ctl_mode = 0）
+  17   2          }
+  18   1      #endif // #ifdef CIRCUIT_BOARD
+  19   1      #ifdef DEVELOPMENT_BOARD
+                  p22_input_config(); // P22输入上拉
+                  if (P22)
+                  {
+                      light_ctl_mode = LIGHT_CTL_MODE_SINGLE; // 接下来触摸按键可以控制开关灯（light_ctl_
+             -mode = 1）
+                  }
+                  else
+                  {
+                      light_ctl_mode = LIGHT_CTL_MODE_MUILTY; // 接下来触摸按键不仅可以控制开关灯，还�
+             -��以控制三种颜色灯光的切换（light_ctl_mode = 0）
+                      // light_muilty_cur_status = LIGHT_MUILTY_CUR_OFF; // 灯的状态为关闭（在这里给变量�
+             -�初值）
+                  }
+              #endif // #ifdef DEVELOPMENT_BOARD
+  31   1      
+  32   1          // 检测完成后，将IO配置回PWM输出
+  33   1      
+  34   1      #ifdef CIRCUIT_BOARD
+  35   1          // 配置P27为timer0的PWM输出端口
+  36   1          P2_MD1 &= ~GPIO_P27_MODE_SEL(0x3);
+  37   1          P2_MD1 |= GPIO_P27_MODE_SEL(0x1);
+  38   1          FOUT_S27 = GPIO_FOUT_TMR0_PWMOUT;
+  39   1      #endif // #ifdef CIRCUIT_BOARD
+  40   1      #ifdef DEVELOPMENT_BOARD
+                  // 使用demo板上的引脚进行测试
+                  P2_MD0 &= ~GPIO_P22_MODE_SEL(0x3);
+                  P2_MD0 |= GPIO_P22_MODE_SEL(0x1); // 输出模式
+                  FOUT_S22 = GPIO_FOUT_TMR0_PWMOUT;
+              #endif // #ifdef DEVELOPMENT_BOARD
+  46   1      
+  47   1          tmr0_pwm_config();
+  48   1      }
+C51 COMPILER V9.60.7.0   LIGHT                                                             08/08/2024 17:06:14 PAGE 2   
+
+  49          
+  50          // 驱动白灯的PWM配置
+  51          void white_light_pwm_config(void)
+  52          {
+  53   1      #ifdef CIRCUIT_BOARD
+  54   1          P2_MD0 &= ~GPIO_P21_MODE_SEL(0x3);
+  55   1          P2_MD0 |= GPIO_P21_MODE_SEL(0x1); // 输出模式
+  56   1          FOUT_S21 = GPIO_FOUT_TMR1_PWMOUT;
+  57   1      #endif // #ifdef CIRCUIT_BOARD
+  58   1      #ifdef DEVELOPMENT_BOARD
+                  // 使用demo板上的P23引脚进行测试
+                  P2_MD0 &= ~GPIO_P23_MODE_SEL(0x3);
+                  P2_MD0 |= GPIO_P23_MODE_SEL(0x1); // 输出模式
+                  FOUT_S23 = GPIO_FOUT_TMR1_PWMOUT;
+              #endif // #ifdef DEVELOPMENT_BOARD
+  64   1      
+  65   1          tmr1_pwm_config();
+  66   1      }
+  67          
+  68          // 关闭黄灯（不能通过直接设置占空比为0来关灯，实际的波形还是会有百分之零
+             -点几的分量）
+  69          void yellow_light_close(void)
+  70          {
+  71   1      #if 0  // 通过延时的方式来调节灯光亮度
+                  cur_pwm_duty = 700; // 单色模式下，灯光的最大亮度为70%占空比对应的亮度
+                  for (; cur_pwm_duty > 0; cur_pwm_duty--)
+                  {
+                      tmr0_set_pwm_duty(cur_pwm_duty);
+                      delay_ms(1);
+                  }
+                  // 最后，将PWM设置为0
+                  // cur_pwm_duty = 0;
+                  tmr0_set_pwm_duty(cur_pwm_duty);
+                  tmr0_disable();
+              #endif // 通过延时的方式来调节灯光亮度
+  83   1      
+  84   1          tmr0_disable();
+  85   1      
+  86   1      #ifdef CIRCUIT_BOARD
+  87   1          FOUT_S27 = GPIO_FOUT_AF_FUNC; // 选择AF功能输出
+  88   1          P27 = 0;
+  89   1      #endif // #ifdef CIRCUIT_BOARD
+  90   1      #ifdef DEVELOPMENT_BOARD
+                  FOUT_S22 = GPIO_FOUT_AF_FUNC; // 选择AF功能输出
+                  P22 = 0;
+              #endif // #ifdef DEVELOPMENT_BOARD
+  94   1      }
+  95          
+  96          // 关闭白灯（不能通过直接设置占空比为0来关灯，实际的波形还是会有百分之零
+             -点几的分量）
+  97          void white_light_close(void)
+  98          {
+  99   1          tmr1_disable();
+ 100   1      
+ 101   1      #ifdef CIRCUIT_BOARD
+ 102   1          FOUT_S21 = GPIO_FOUT_AF_FUNC; // 选择AF功能输出
+ 103   1          P21 = 0;
+ 104   1      #endif // #ifdef  CIRCUIT_BOARD
+ 105   1      #ifdef DEVELOPMENT_BOARD
+                  FOUT_S23 = GPIO_FOUT_AF_FUNC; // 选择AF功能输出
+                  P23 = 0;
+              #endif //     #ifdef DEVELOPMENT_BOARD
+C51 COMPILER V9.60.7.0   LIGHT                                                             08/08/2024 17:06:14 PAGE 3   
+
+ 109   1      }
+ 110          
+ 111          // 开启黄灯（开启前需要注意先设置好PWM的占空比）
+ 112          void yellow_light_open(void)
+ 113          {
+ 114   1      #ifdef DEVELOPMENT_BOARD
+                  FOUT_S22 = GPIO_FOUT_TMR0_PWMOUT; // 将IO复用为定时器0的PWM输出
+              #endif                                // #ifdef DEVELOPMENT_BOARD
+ 117   1      #ifdef CIRCUIT_BOARD
+ 118   1          FOUT_S27 = GPIO_FOUT_TMR0_PWMOUT; // 将IO复用为定时器0的PWM输出
+ 119   1      #endif                                // #ifdef CIRCUIT_BOARD
+ 120   1          tmr0_enable();
+ 121   1      
+ 122   1      #if 0  // 通过延时的方式来调节灯光亮度
+                  cur_pwm_duty = 0;
+                  tmr0_set_pwm_duty(cur_pwm_duty); // 先将占空比设置为0，再开启定时器
+                  tmr0_enable();
+                  // pwm从0.0%变化到70.0%
+                  for (cur_pwm_duty = 0; cur_pwm_duty <= LIGHT_OPEN_CLOSE_TIME; cur_pwm_duty++)
+                  {
+                      tmr0_set_pwm_duty(cur_pwm_duty);
+                      delay_ms(1);
+                  }
+              #endif // 通过延时的方式来调节灯光亮度
+ 133   1      }
+ 134          
+ 135          // 开启白灯（开启前需要注意先设置好PWM的占空比）
+ 136          void white_light_open(void)
+ 137          {
+ 138   1      #ifdef DEVELOPMENT_BOARD
+                  FOUT_S23 = GPIO_FOUT_TMR1_PWMOUT; // 将IO复用为定时器1的PWM输出
+              #endif                                // #ifdef DEVELOPMENT_BOARD
+ 141   1      #ifdef CIRCUIT_BOARD
+ 142   1          FOUT_S21 = GPIO_FOUT_TMR1_PWMOUT; // 将IO复用为定时器1的PWM输出
+ 143   1      #endif                                // #ifdef  CIRCUIT_BOARD
+ 144   1      
+ 145   1          tmr1_enable();
+ 146   1      }
+ 147          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     90    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

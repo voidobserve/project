@@ -1,0 +1,1 @@
+"..\..\App\my_sys.c" LARGE OPTIMIZE (8,SIZE) BROWSE INTVECTOR(0x000C) INCDIR(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) interval(3) DEBUG OBJECTEXTEND PRINT(.\Release\Listings\my_sys.lst) OBJECT(.\Release\Objects\my_sys.obj)

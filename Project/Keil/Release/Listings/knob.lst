@@ -1,0 +1,491 @@
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE KNOB
+OBJECT MODULE PLACED IN .\Release\Objects\knob.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Hardware\knob.c LARGE OPTIMIZE(8,SIZE) BROWSE INTVECTOR(0X000C) IN
+                    -CDIR(..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware;..\..\Lowpower;..\..\App) INTERVAL(3) DEBUG OBJECT
+                    -EXTEND PRINT(.\Release\Listings\knob.lst) OBJECT(.\Release\Objects\knob.obj)
+
+line level    source
+
+   1          // encoding GB2312
+   2          #include "knob.h"
+   3          
+   4          static volatile u16 last_adc_val = 0;         // ¼ÇÂ¼Ö®Ç°¼ì²âµÄadcÖµ£¬Èç¹ûÓÐ±ä»¯£¬ÔòÒªÁ¢¼´µ÷ÕûµÆ¹âÁÁ¶È
+   5          static volatile bit last_knob_on_off_pin = 0; // ¼ÇÂ¼ÐýÅ¥¿ª/¹ØÒý½ÅµÄµçÆ½×´Ì¬£¬Èç¹ûÓÐ±ä»¯£¬ËµÃ÷ÒªÖ´ÐÐ¿ªµÆ/¹
+             -ØµÆ²Ù×÷
+   6          // µ±Ç°µÆ¹âÊÇ·ñÎª×î°µµÄ±êÖ¾Î»£¬ÓÃÓÚ·ÀÖ¹ÐýÅ¥´¦ÓÚ×îÐ¡·¶Î§È´Î´¹Ø±ÕÊ±£¬
+   7          // ÖØ¸´½øÈë¹¦ÄÜ´¦Àíº¯Êý£¬µ¼ÖÂµÆ¹âÉÁË¸
+   8          // 0--·ñ£¬1--ÊÇ
+   9          static volatile bit is_light_lowest_flag = 0;
+  10          
+  11          void knob_config(void)
+  12          {
+  13   1          // ÐýÅ¥¿ª/¹ØÒý½ÅÅäÖÃÎªÉÏÀ­ÊäÈë
+  14   1          p15_input_config();
+  15   1          // ÓÃÓÚ¼ì²âÐýÅ¥Ò»²àµçÑ¹µÄadcµÄÅäÖÃ
+  16   1          adc_config();
+  17   1      
+  18   1          adc_getval();
+  19   1          last_adc_val = adc_val;                 //  µÚÒ»´ÎÉÏµçÊ±£¬¼ì²âadcÖµ£¨·ÀÖ¹¶ÏµçÊ±ÐýÅ¥Ã»ÓÐ¹Ø±Õ£¬½á¹ûÒ»ÉÏµ
+             -ç¾ÍµãÁÁµÆ£©
+  20   1          last_knob_on_off_pin = KNOB_ON_OFF_PIN; // µÚÒ»´ÎÉÏµçÊ±£¬¼ÇÂ¼ÐýÅ¥¿ª/¹ØÒý½ÅµÄµçÆ½×´Ì¬
+  21   1      }
+  22          
+  23          u16 __target_pwm_duty_update(u16 __target_pwm_duty)
+  24          {
+  25   1          // ´æ·Å×îÖÕÒªµ÷½Úµ½µÄpwmÕ¼¿Õ±È£¬¾«È·µ½Ð¡Êýµãºó1Î»
+  26   1          // ÀýÈç target_pwm_duty = 254£¬ÔòÕ¼¿Õ±ÈÎª25.4%
+  27   1          u16 target_pwm_duty = 0;
+  28   1      
+  29   1          adc_getval(); // µÃµ½Ò»´ÎÂË²¨ºóµÄadcÖµ
+  30   1      
+  31   1          if ((1 == is_light_lowest_flag && adc_val <= (ADC_MIN_VAL + ADC_STEP_VAL)) ||
+  32   1              (last_adc_val <= (adc_val + ADC_STEP_VAL) && (last_adc_val >= (adc_val - ADC_STEP_VAL))))
+  33   1          {
+  34   2              // Èç¹û²âµÃµÄÊýÖµ¶ÔÓ¦ÐýÅ¥µÄ×îÐ¡Î»ÖÃ¸½½ü£¬Í¬ÑùÍË³öº¯Êý
+  35   2              // Èç¹ûÊýÖµÔÚ ¦¤ ÒÔÄÚ£¬ÔòÈÏÎªÃ»ÓÐ±ä»¯£¬²»½øÐÐÏàÓ¦µÄ´¦Àí²Ù×÷
+  36   2              return __target_pwm_duty; // ·µ»ØÔ­À´µÄÊýÖµ
+  37   2          }
+  38   1      
+  39   1          last_adc_val = adc_val; //  ¼ÇÂ¼Ö®Ç°¼ì²âµÄadcÖµ
+  40   1      
+  41   1          // µÃµ½µ±Ç°adcÖµÕ¼×ÜµçÑ¹ÖµµÄ°Ù·Ö±È£¬¾«È·µ½Ð¡Êýµãºó1Î»
+  42   1          // £¨µ±Ç°¼ì²âµ½µÄµçÑ¹ÖµÕ¼×ÜµçÑ¹ÖµµÄ°Ù·Ö±È ¸ÕºÃ¶ÔÓ¦ ÁÁ¶ÈµÄ°Ù·Ö±È£©
+  43   1          target_pwm_duty = (u32)adc_val * 700 / ADC_MAX_VAL;
+  44   1      
+  45   1          // Èç¹û¼ÆËãµÄÄ¿±êÕ¼¿Õ±È³¬³öÁËµ±Ç°Ö§³ÖµÄ×î´óÕ¼¿Õ±È£¬°´×î´óµÄÕ¼¿Õ±È´¦Àí
+  46   1          if (LIGHT_CTL_MODE_SINGLE == light_ctl_mode ||
+  47   1              LIGHT_MUILTY_CUR_WHITE == light_muilty_cur_status ||
+  48   1              LIGHT_MUILTY_CUR_YELLOW == light_muilty_cur_status)
+  49   1          {
+  50   2              if (target_pwm_duty > PWM_MAX_DUTY_SINGLE_LIGHT)
+  51   2              {
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 2   
+
+  52   3                  target_pwm_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
+  53   3              }
+  54   2          }
+  55   1          else if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status)
+  56   1          {
+  57   2              if (target_pwm_duty > PWM_MAX_DUTY_MUILTY_LIGHT)
+  58   2              {
+  59   3                  target_pwm_duty = PWM_MAX_DUTY_MUILTY_LIGHT;
+  60   3              }
+  61   2          }
+  62   1      
+  63   1          if (adc_val <= ADC_MIN_VAL) // adcÖµÐ¡ÓÚÉè¶¨µÄ×îÐ¡ÖµÇø¼ä£¬Ò»ÂÉ°´ÕÕ1.0%µÄÕ¼¿Õ±ÈÀ´ÉèÖÃ
+  64   1          {
+  65   2              u8 i = 0;
+  66   2              for (i = 0; i < 3; i++)
+  67   2              {
+  68   3                  adc_getval();
+  69   3                  if (!(adc_val <= ADC_MIN_VAL))
+  70   3                  {
+  71   4                      is_light_lowest_flag = 0;
+  72   4                      return __target_pwm_duty;
+  73   4                  }
+  74   3              }
+  75   2      
+  76   2              if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status)
+  77   2              {
+  78   3                  target_pwm_duty = PWM_MIN_DUTY_YELLOW_WHITE_LIGHT;
+  79   3              }
+  80   2              else
+  81   2              {
+  82   3                  target_pwm_duty = PWM_MIN_DUTY_LIGHT;
+  83   3              }
+  84   2      
+  85   2              is_light_lowest_flag = 1;
+  86   2              last_adc_val = target_pwm_duty * ADC_MAX_VAL / 700 / adc_val;
+  87   2          }
+  88   1          else
+  89   1          {
+  90   2              is_light_lowest_flag = 0;
+  91   2          }
+  92   1      
+  93   1          return target_pwm_duty;
+  94   1      }
+  95          
+  96          // ÐýÅ¥Ïà¹ØµÄ´¦Àíº¯Êý
+  97          void knob_handle(void)
+  98          {
+  99   1          u8 i = 0;
+ 100   1      
+ 101   1          // ´æ·Å×îÖÕÒªµ÷½Úµ½µÄpwmÕ¼¿Õ±È£¬¾«È·µ½Ð¡Êýµãºó1Î»
+ 102   1          // ÀýÈç target_pwm_duty = 254£¬ÔòÕ¼¿Õ±ÈÎª25.4%
+ 103   1          u16 target_pwm_duty = 0;
+ 104   1      
+ 105   1          // if (LIGHT_CTL_MODE_MUILTY == light_ctl_mode && LIGHT_MUILTY_CUR_OFF == light_muilty_cur_status)
+ 106   1          // {
+ 107   1          //     // Èç¹ûµ±Ç°´¦ÓÚÈýÉ«ÇÐ»»Ä£Ê½ÖÐµÄ¹ØµÆ×´Ì¬£¬²»Í¨¹ýÐýÅ¥µ÷½ÚµÆ¹âÁÁ¶È£¬Ö±µ½´¥ÃþÇÐ»»ÁËµÆ¹âÑÕÉ«
+ 108   1          //     return;
+ 109   1          // }
+ 110   1      
+ 111   1          // ÐýÅ¥¿ª/¹ØÒý½ÅÎªµÍµçÆ½£¬²ÅÄÜ½øÐÐºóÐøµÄadc¼ì²âºÍ´¦Àí²Ù×÷
+ 112   1          if (KNOB_ON_OFF_PIN && 1 == last_knob_on_off_pin) // Èç¹ûÎª¸ßµçÆ½£¬Ö±½Ó·µ»Ø£¬²»¼ì²âad
+ 113   1          {
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 3   
+
+ 114   2              return;
+ 115   2          }
+ 116   1          else if (1 == KNOB_ON_OFF_PIN && 0 == last_knob_on_off_pin)
+ 117   1          {
+ 118   2              delay_ms(10); // ÐýÅ¥¿ª¹Ø»áÓÐ¶¶¶¯£¬ÕâÀïÒªÑÓÊ±Ïû¶¶
+ 119   2              if (!(1 == KNOB_ON_OFF_PIN && 0 == last_knob_on_off_pin))
+ 120   2              {
+ 121   3                  return;
+ 122   3              }
+ 123   2      
+ 124   2              // Èç¹ûÖ®Ç°ÎªµÍµçÆ½£¬ÏÖÔÚ¼ì²âµ½ÁË¸ßµçÆ½£¬ËµÃ÷ÒªÖ´ÐÐ¹ØµÆ²Ù×÷
+ 125   2              // ¹ØµÆºó£¬×öºÃÏàÓ¦µÄ±êÖ¾Î»´¦Àí£¬ÔÙÍË³ö
+ 126   2              last_knob_on_off_pin = KNOB_ON_OFF_PIN; // ¸üÐÂÓÃÓÚ¼ÇÂ¼µÄ±êÖ¾Î»µÄ×´Ì¬
+ 127   2      
+ 128   2              // ²»¹Ü´¦ÓÚÊ²Ã´Ä£Ê½£¬Ö±½Ó¹Ø±ÕÕâÁ½¸öµÆ
+ 129   2              cur_pwm_duty = 0;
+ 130   2              tmr0_set_pwm_duty(cur_pwm_duty);
+ 131   2              tmr1_set_pwm_duty(cur_pwm_duty);
+ 132   2              yellow_light_close();
+ 133   2              white_light_close();
+ 134   2              light_on_off_status = 0;  // ¸üÐÂµÆ¹â×´Ì¬
+ 135   2              is_light_lowest_flag = 0; // Çå³ý±êÖ¾Î»µÄ×´Ì¬£¨µÆ¹â¹Ø±ÕÖ®ºó£¬²»ÈÏÎªËüÊÇ×îÐ¡ÁÁ¶È£©
+ 136   2      
+ 137   2              // ÏÂ´Î³¤°´Òª±ä³ÉÔö´óÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 138   2              light_adjust_add_sub_flag = 1; // ¸üÐÂ±êÖ¾Î»
+ 139   2              send_key_status(0x00);         // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬
+ 140   2              return;
+ 141   2          }
+ 142   1          else if (0 == KNOB_ON_OFF_PIN && 1 == last_knob_on_off_pin)
+ 143   1          {
+ 144   2              delay_ms(10); // ÐýÅ¥¿ª¹Ø»áÓÐ¶¶¶¯£¬ÕâÀïÒªÑÓÊ±Ïû¶¶
+ 145   2              if (!(0 == KNOB_ON_OFF_PIN && 1 == last_knob_on_off_pin))
+ 146   2              {
+ 147   3                  return;
+ 148   3              }
+ 149   2              // Èç¹ûÖ®Ç°Îª¸ßµçÆ½£¬ÏÖÔÚÎªµÍµçÆ½£¬ËµÃ÷ÒªÖ´ÐÐ¿ªµÆ²Ù×÷£¬²¢µ÷½ÚPWM
+ 150   2      
+ 151   2              if (LIGHT_CTL_MODE_SINGLE == light_ctl_mode ||
+ 152   2                  LIGHT_MUILTY_CUR_WHITE == light_muilty_cur_status)
+ 153   2              {
+ 154   3                  // Èç¹ûÊÇ°×µÆ
+ 155   3                  white_light_open();
+ 156   3              }
+ 157   2              else if (LIGHT_MUILTY_CUR_YELLOW == light_muilty_cur_status)
+ 158   2              {
+ 159   3                  // Èç¹ûÊÇ»ÆµÆ
+ 160   3                  yellow_light_open();
+ 161   3              }
+ 162   2              else if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status)
+ 163   2              {
+ 164   3                  // Èç¹ûÊÇ»Æ°×µÆ
+ 165   3                  white_light_open();
+ 166   3                  yellow_light_open();
+ 167   3              }
+ 168   2              else if (LIGHT_MUILTY_CUR_OFF == light_muilty_cur_status) // °×µÆ£¨´Ó¹ØµÆµÄ×´Ì¬->°×µÆ£©
+ 169   2              {
+ 170   3                  cur_pwm_duty = cur_white_duty;
+ 171   3                  tmr1_set_pwm_duty(cur_pwm_duty); // °×µÆ
+ 172   3                  white_light_open();              // ÖØÐÂÅäÖÃIOºÍ¶¨Ê±Æ÷
+ 173   3      
+ 174   3                  light_muilty_cur_status = LIGHT_MUILTY_CUR_WHITE;
+ 175   3                  // light_on_off_status = 1; // ¸üÐÂµÆµÄ×´Ì¬
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 4   
+
+ 176   3                  // send_key_status(0x00);   // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬£¨´Ó¹ØµÆ×´Ì¬±ä³
+             -É°×µÆ£¬Òª·¢ËÍ¸Ã×´Ì¬£©
+ 177   3      
+ 178   3                  if (cur_pwm_duty <= PWM_MIN_DUTY_LIGHT)
+ 179   3                  {
+ 180   4                      // ÏÂ´Î³¤°´Òª±ä³ÉÔö´óÁÁ¶È
+ 181   4                      light_adjust_add_sub_flag = 1; // ¸üÐÂÓÃÓÚ¿ØÖÆµ÷ÕûµÆ¹âÁÁ¶ÈµÄ±êÖ¾Î»
+ 182   4                  }
+ 183   3                  else
+ 184   3                  {
+ 185   4                      // ÏÂ´Î³¤°´Òª±ä³É¼õÐ¡ÁÁ¶È
+ 186   4                      light_adjust_add_sub_flag = 0; // ¸üÐÂÓÃÓÚ¿ØÖÆµ÷ÕûµÆ¹âÁÁ¶ÈµÄ±êÖ¾Î»
+ 187   4                  }
+ 188   3              }
+ 189   2      
+ 190   2              light_on_off_status = 1; // ¸üÐÂµÆ¹â×´Ì¬
+ 191   2              send_key_status(0x00);   // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬
+ 192   2          }
+ 193   1      
+ 194   1          last_knob_on_off_pin = KNOB_ON_OFF_PIN;
+ 195   1      
+ 196   1          // Èç¹ûÎªµÍµçÆ½£¬Ôò»áÀ´µ½ÕâÀï£¬Ö´ÐÐºóÐøµÄ²Ù×÷
+ 197   1          adc_getval(); // µÃµ½Ò»´ÎÂË²¨ºóµÄadcÖµ
+ 198   1      
+ 199   1          // ÏÂÃæÕâÀï»¹Ã»ÓÐ¿¼ÂÇµÚÒ»´ÎÉÏµçµÄÇé¿ö£¬Èç¹ûµÚÒ»´ÎÉÏµç£¬ÐýÅ¥µÄÎ»ÖÃ²»¹Ì¶¨£¬ÅÐ¶Ï¾Í»áÓÐÎÊÌâ
+ 200   1          // Ò²Ã»ÓÐ¿¼ÂÇµ÷½Úµ½×îÁÁµÄÇé¿ö£¨»áµ¼ÖÂµ÷²»µ½×îÁÁ£©
+ 201   1          // Ã»ÓÐ¿¼ÂÇµ½µ±ÐýÅ¥´¦ÓÚ×îÐ¡µÄÎ»ÖÃ¸½½üµÄÇé¿ö
+ 202   1          // if (last_adc_val <= (adc_val + 10) && last_adc_val >= (adc_val - 10)) // ÄÄÅÂÐýÅ¥Ã»ÓÐ¶¯×÷£¬Ò²»áÓÐ´ó
+             -ÓÚÕâ¸ö¦¤µÄÎó²î
+ 203   1          // if (last_adc_val <= (adc_val + 40) && last_adc_val >= (adc_val - 40)) // ÄÄÅÂÐýÅ¥Ã»ÓÐ¶¯×÷£¬Ò²»áÓÐ´ó
+             -ÓÚÕâ¸ö¦¤µÄÎó²î
+ 204   1          // if (last_adc_val <= (adc_val + 50) && last_adc_val >= (adc_val - 50)) //
+ 205   1          if ((1 == is_light_lowest_flag && adc_val <= (ADC_MIN_VAL + ADC_STEP_VAL)) ||
+ 206   1              (last_adc_val <= (adc_val + ADC_STEP_VAL) && (last_adc_val >= (adc_val - ADC_STEP_VAL))))
+ 207   1          {
+ 208   2              // Èç¹û²âµÃµÄÊýÖµ¶ÔÓ¦ÐýÅ¥µÄ×îÐ¡Î»ÖÃ¸½½ü£¬Í¬ÑùÍË³öº¯Êý
+ 209   2              // Èç¹ûÊýÖµÔÚ ¦¤ ÒÔÄÚ£¬ÔòÈÏÎªÃ»ÓÐ±ä»¯£¬²»½øÐÐÏàÓ¦µÄ´¦Àí²Ù×÷
+ 210   2              return;
+ 211   2          }
+ 212   1      
+ 213   1          last_adc_val = adc_val; //  ¼ÇÂ¼Ö®Ç°¼ì²âµÄadcÖµ
+ 214   1      
+ 215   1          // µÃµ½µ±Ç°adcÖµÕ¼×ÜµçÑ¹ÖµµÄ°Ù·Ö±È£¬¾«È·µ½Ð¡Êýµãºó1Î»
+ 216   1          // £¨µ±Ç°¼ì²âµ½µÄµçÑ¹ÖµÕ¼×ÜµçÑ¹ÖµµÄ°Ù·Ö±È ¸ÕºÃ¶ÔÓ¦ ÁÁ¶ÈµÄ°Ù·Ö±È£©
+ 217   1          target_pwm_duty = (u32)adc_val * 700 / ADC_MAX_VAL;
+ 218   1      
+ 219   1          // Èç¹û¼ÆËãµÄÄ¿±êÕ¼¿Õ±È³¬³öÁËµ±Ç°Ö§³ÖµÄ×î´óÕ¼¿Õ±È£¬°´×î´óµÄÕ¼¿Õ±È´¦Àí
+ 220   1          if (LIGHT_CTL_MODE_SINGLE == light_ctl_mode ||
+ 221   1              LIGHT_MUILTY_CUR_WHITE == light_muilty_cur_status ||
+ 222   1              LIGHT_MUILTY_CUR_YELLOW == light_muilty_cur_status)
+ 223   1          {
+ 224   2              if (target_pwm_duty > PWM_MAX_DUTY_SINGLE_LIGHT)
+ 225   2              {
+ 226   3                  target_pwm_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
+ 227   3              }
+ 228   2          }
+ 229   1          else if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status)
+ 230   1          {
+ 231   2              if (target_pwm_duty > PWM_MAX_DUTY_MUILTY_LIGHT)
+ 232   2              {
+ 233   3                  target_pwm_duty = PWM_MAX_DUTY_MUILTY_LIGHT;
+ 234   3              }
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 5   
+
+ 235   2          }
+ 236   1      
+ 237   1          if (adc_val <= ADC_MIN_VAL) // adcÖµÐ¡ÓÚÉè¶¨µÄ×îÐ¡ÖµÇø¼ä£¬Ò»ÂÉ°´ÕÕ1.0%µÄÕ¼¿Õ±ÈÀ´ÉèÖÃ
+ 238   1          // if (target_pwm_duty <= 30) // Èç¹ûÄ¿±êÕ¼¿Õ±ÈÐ¡ÓÚ3.0%£¬°´ÕÕ1.0%À´ÉèÖÃ
+ 239   1          {
+ 240   2              u8 i = 0;
+ 241   2              for (i = 0; i < 10; i++)
+ 242   2              {
+ 243   3                  adc_getval();
+ 244   3                  if (!(adc_val <= ADC_MIN_VAL))
+ 245   3                  {
+ 246   4                      is_light_lowest_flag = 0;
+ 247   4                      return;
+ 248   4                  }
+ 249   3              }
+ 250   2      
+ 251   2              if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status)
+ 252   2              {
+ 253   3                  target_pwm_duty = PWM_MIN_DUTY_YELLOW_WHITE_LIGHT;
+ 254   3              }
+ 255   2              else
+ 256   2              {
+ 257   3                  target_pwm_duty = PWM_MIN_DUTY_LIGHT;
+ 258   3              }
+ 259   2              is_light_lowest_flag = 1;
+ 260   2              last_adc_val = target_pwm_duty * ADC_MAX_VAL / 700 / adc_val;
+ 261   2          }
+ 262   1          else
+ 263   1          {
+ 264   2              is_light_lowest_flag = 0;
+ 265   2          }
+ 266   1      
+ 267   1      #if USE_MY_DEBUG
+                  printf("²âµÃµÄadcÖµ %d\n", adc_val);
+                  printf("Ä¿±êÕ¼¿Õ±È %d\n", target_pwm_duty);
+              #endif // USE_MY_DEBUG
+ 271   1      
+ 272   1          while (1)
+ 273   1          {
+ 274   2              target_pwm_duty = __target_pwm_duty_update(target_pwm_duty);
+ 275   2      
+ 276   2              if (LIGHT_CTL_MODE_SINGLE == light_ctl_mode)
+ 277   2              {
+ 278   3                  // Èç¹ûµ±Ç°ÊÇµ¥É«Ä£Ê½£¨Ö»¿ØÖÆ°×µÆ£©
+ 279   3                  if (0 == light_on_off_status)
+ 280   3                  {
+ 281   4                      // Èç¹ûÃ»ÓÐ¿ªµÆ£¬ÔòÖ±½ÓÍË³ö
+ 282   4                      return;
+ 283   4                  }
+ 284   3      
+ 285   3                  if (cur_pwm_duty < target_pwm_duty)
+ 286   3                  {
+ 287   4                      // Èç¹ûÊÇÒªÔö´óÁÁ¶È
+ 288   4      
+ 289   4                      if (0 == light_on_off_status)
+ 290   4                      {
+ 291   5                          // Èç¹û´ËÊ±µÆ¹âÊÇÃðµÄ£¬´ò¿ªµÆ¹â£¬²¢¸üÐÂ×´Ì¬
+ 292   5                          tmr1_set_pwm_duty(cur_pwm_duty);
+ 293   5                          white_light_open();
+ 294   5      
+ 295   5                          light_on_off_status = 1; // ¸üÐÂµÆ¹â×´Ì¬
+ 296   5                          send_key_status(0x00);   // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 6   
+
+ 297   5                      }
+ 298   4      
+ 299   4                      tmr1_set_pwm_duty(++cur_pwm_duty);
+ 300   4                      cur_white_duty = cur_pwm_duty; // ¼ÇÂ¼°×µÆµÄpwm
+ 301   4                      // ÏÂ´Î³¤°´Òª±ä³É¼õÐ¡ÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 302   4                      light_adjust_add_sub_flag = 0; // ¸üÐÂ±êÖ¾Î»
+ 303   4                  }
+ 304   3                  else if (cur_pwm_duty > target_pwm_duty)
+ 305   3                  {
+ 306   4                      // Èç¹ûÊÇÒª¼õÐ¡ÁÁ¶È
+ 307   4                      tmr1_set_pwm_duty(--cur_pwm_duty);
+ 308   4                      cur_white_duty = cur_pwm_duty; // ¼ÇÂ¼°×µÆµÄpwm
+ 309   4                      // ÏÂ´Î³¤°´Òª±ä³ÉÔö´óÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 310   4                      light_adjust_add_sub_flag = 1; // ¸üÐÂ±êÖ¾Î»
+ 311   4                  }
+ 312   3                  else if (cur_pwm_duty == target_pwm_duty)
+ 313   3                  {
+ 314   4                      // Èç¹ûÒÑ¾­µ½ÁË¶ÔÓ¦µÄÁÁ¶È
+ 315   4      #if USE_MY_DEBUG
+                              printf("µ±Ç°Õ¼¿Õ±È£º %d\n", target_pwm_duty);
+              #endif
+ 318   4                      break; // ÍË³öµ÷½Ú
+ 319   4                  }
+ 320   3      
+ 321   3                  light_on_off_status = 1; // ¸üÐÂµÆ¹â×´Ì¬
+ 322   3              }
+ 323   2              else if (LIGHT_CTL_MODE_MUILTY == light_ctl_mode)
+ 324   2              {
+ 325   3                  // Èç¹ûµ±Ç°ÊÇÈýÉ«ÇÐ»»Ä£Ê½
+ 326   3                  // ÅÐ¶Ïµ±Ç°ÊÇ²»ÊÇ»Æ°×É«£¬Èç¹ûÊÇ£¬ÐèÒª×¢Òâ×î´óµÄÕ¼¿Õ±ÈÎª60%£¬Èç¹û²»ÊÇ£¬×î´óµÄÕ¼¿Õ±ÈÎª70%
+ 327   3                  if (LIGHT_MUILTY_CUR_WHITE == light_muilty_cur_status) // µ±Ç°Îª°×É«µÆ
+ 328   3                  {
+ 329   4                      // Èç¹ûµ±Ç°ÊÇÔÚÔö´óÁÁ¶È
+ 330   4                      if (cur_pwm_duty < target_pwm_duty)
+ 331   4                      {
+ 332   5                          // if (0 == light_on_off_status)
+ 333   5                          // {
+ 334   5                          //     // Èç¹û´ËÊ±µÆ¹âÊÇÃðµÄ£¬´ò¿ªµÆ¹â£¬²¢¸üÐÂ×´Ì¬
+ 335   5                          //     tmr1_set_pwm_duty(cur_pwm_duty);
+ 336   5                          //     white_light_open();
+ 337   5      
+ 338   5                          //     light_on_off_status = 1; // ¸üÐÂµÆ¹â×´Ì¬
+ 339   5                          //     send_key_status(0x00);   // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬
+ 340   5                          // }
+ 341   5      
+ 342   5                          tmr1_set_pwm_duty(++cur_pwm_duty);
+ 343   5                          cur_white_duty = cur_pwm_duty; // ¸üÐÂ¶ÀÁ¢±£´æµÄPWMÕ¼¿Õ±È
+ 344   5                          // ÏÂ´Î³¤°´Òª±ä³É¼õÐ¡ÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 345   5                          light_adjust_add_sub_flag = 0; // ¸üÐÂ±êÖ¾Î»
+ 346   5                      }
+ 347   4                      else if (cur_pwm_duty > target_pwm_duty)
+ 348   4                      {
+ 349   5                          // Èç¹ûÊÇÒª¼õÐ¡ÁÁ¶È
+ 350   5                          tmr1_set_pwm_duty(--cur_pwm_duty);
+ 351   5                          cur_white_duty = cur_pwm_duty; // ¸üÐÂ¶ÀÁ¢±£´æµÄPWMÕ¼¿Õ±È
+ 352   5                          // ÏÂ´Î³¤°´Òª±ä³ÉÔö´óÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 353   5                          light_adjust_add_sub_flag = 1; // ¸üÐÂ±êÖ¾Î»
+ 354   5                      }
+ 355   4                      else
+ 356   4                      {
+ 357   5                          // Èç¹ûÒÑ¾­µ½ÁË¶ÔÓ¦µÄÁÁ¶È
+ 358   5                          // tmr1_set_pwm_duty(cur_pwm_duty);
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 7   
+
+ 359   5                          break;
+ 360   5                      }
+ 361   4                  }
+ 362   3                  else if (LIGHT_MUILTY_CUR_YELLOW == light_muilty_cur_status) // Èç¹ûµ±Ç°ÊÇ»ÆµÆ
+ 363   3                  {
+ 364   4                      // Èç¹ûµ±Ç°ÊÇÔÚÔö´óÁÁ¶È
+ 365   4                      if (cur_pwm_duty < target_pwm_duty)
+ 366   4                      {
+ 367   5                          // if (0 == light_on_off_status)
+ 368   5                          // {
+ 369   5                          //     // Èç¹û´ËÊ±µÆ¹âÊÇÃðµÄ£¬´ò¿ªµÆ¹â£¬²¢¸üÐÂ×´Ì¬
+ 370   5                          //     tmr0_set_pwm_duty(cur_pwm_duty);
+ 371   5                          //     yellow_light_open();
+ 372   5      
+ 373   5                          //     light_on_off_status = 1; // ¸üÐÂµÆ¹â×´Ì¬
+ 374   5                          //     send_key_status(0x00);   // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬
+ 375   5                          // }
+ 376   5      
+ 377   5                          tmr0_set_pwm_duty(++cur_pwm_duty);
+ 378   5                          cur_yellow_duty = cur_pwm_duty; // ¸üÐÂ¶ÀÁ¢±£´æµÄPWMÕ¼¿Õ±È
+ 379   5                          // ÏÂ´Î³¤°´Òª±ä³É¼õÐ¡ÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 380   5                          light_adjust_add_sub_flag = 0; // ¸üÐÂ±êÖ¾Î»
+ 381   5                      }
+ 382   4                      else if (cur_pwm_duty > target_pwm_duty)
+ 383   4                      {
+ 384   5                          // Èç¹ûÊÇÒª¼õÐ¡ÁÁ¶È
+ 385   5                          tmr0_set_pwm_duty(--cur_pwm_duty);
+ 386   5                          cur_yellow_duty = cur_pwm_duty; // ¸üÐÂ¶ÀÁ¢±£´æµÄPWMÕ¼¿Õ±È
+ 387   5                          // ÏÂ´Î³¤°´Òª±ä³ÉÔö´óÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 388   5                          light_adjust_add_sub_flag = 1; // ¸üÐÂ±êÖ¾Î»
+ 389   5                      }
+ 390   4                      else
+ 391   4                      {
+ 392   5                          // Èç¹ûÒÑ¾­µ½ÁËÉè¶¨µÄÁÁ¶È
+ 393   5                          // tmr0_set_pwm_duty(cur_pwm_duty);
+ 394   5                          break;
+ 395   5                      }
+ 396   4                  }
+ 397   3                  else if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status)
+ 398   3                  {
+ 399   4                      // Èç¹ûµ±Ç°ÊÇ»Æ°×É«
+ 400   4      
+ 401   4                      // Èç¹ûµ±Ç°ÊÇÔÚÔö´óÁÁ¶È
+ 402   4                      if (cur_pwm_duty < target_pwm_duty)
+ 403   4                      {
+ 404   5                          // if (0 == light_on_off_status)
+ 405   5                          // {
+ 406   5                          //     // Èç¹û´ËÊ±µÆ¹âÊÇÃðµÄ£¬´ò¿ªµÆ¹â£¬²¢¸üÐÂ×´Ì¬
+ 407   5                          //     tmr0_set_pwm_duty(cur_pwm_duty);
+ 408   5                          //     tmr1_set_pwm_duty(cur_pwm_duty);
+ 409   5                          //     yellow_light_open();
+ 410   5                          //     white_light_open();
+ 411   5      
+ 412   5                          //     light_on_off_status = 1; // ¸üÐÂµÆ¹â×´Ì¬
+ 413   5                          //     send_key_status(0x00);   // ·¢ËÍ²»´ø°´¼üÐÅÏ¢µÄÊý¾Ý£¬Ö÷ÒªÊÇ·¢ËÍµ±Ç°µÄµÆ¹â×´Ì¬
+ 414   5                          // }
+ 415   5      
+ 416   5                          tmr0_set_pwm_duty(++cur_pwm_duty);
+ 417   5                          tmr1_set_pwm_duty(cur_pwm_duty);
+ 418   5                          cur_yellow_white_duty = cur_pwm_duty; // ¸üÐÂ¶ÀÁ¢±£´æµÄPWMÕ¼¿Õ±È
+ 419   5                          // ÏÂ´Î³¤°´Òª±ä³É¼õÐ¡ÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 420   5                          light_adjust_add_sub_flag = 0; // ¸üÐÂ±êÖ¾Î»
+C51 COMPILER V9.60.7.0   KNOB                                                              08/08/2024 17:06:15 PAGE 8   
+
+ 421   5                      }
+ 422   4                      else if (cur_pwm_duty > target_pwm_duty)
+ 423   4                      {
+ 424   5                          // Èç¹ûµ±Ç°ÊÇÔÚ¼õÐ¡ÁÁ¶È
+ 425   5                          tmr0_set_pwm_duty(--cur_pwm_duty);
+ 426   5                          tmr1_set_pwm_duty(cur_pwm_duty);
+ 427   5      
+ 428   5                          cur_yellow_white_duty = cur_pwm_duty; // ¸üÐÂ¶ÀÁ¢±£´æµÄPWMÕ¼¿Õ±È
+ 429   5                          // ÏÂ´Î³¤°´Òª±ä³ÉÔö´óÁÁ¶È£¨°´¼ü³¤°´µÄÏà¹Ø¹¦ÄÜÖÐ»á´ò¿ªÏàÓ¦µÄµÆ£©
+ 430   5                          light_adjust_add_sub_flag = 1; // ¸üÐÂ±êÖ¾Î»
+ 431   5                      }
+ 432   4                      else
+ 433   4                      {
+ 434   5                          // Èç¹ûÒÑ¾­µ½ÁË×î´óÁÁ¶È
+ 435   5                          break;
+ 436   5                      }
+ 437   4                  }
+ 438   3                  else
+ 439   3                  {
+ 440   4                      break; // Èç¹û²»ÊÇ°×É«µÆ¹â¡¢»ÆÉ«µÆ¹âºÍ»Æ°×É«µÆ¹â£¬Ö±½Ó·µ»Ø
+ 441   4                  }
+ 442   3              } // Èç¹ûµ±Ç°ÊÇÈýÉ«ÇÐ»»Ä£Ê½
+ 443   2      
+ 444   2              // delay_100us(15); // Ã¿1.5msµ÷Õû0.1%µÄÕ¼¿Õ±È
+ 445   2              delay_100us(PWM_ADJUST_DUTY_TIME_STEP); // Ã¿x.xmsµ÷Õû0.1%µÄÕ¼¿Õ±È
+ 446   2          } // while(1)
+ 447   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1479    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
