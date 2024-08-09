@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 1   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TK_USER
@@ -62,7 +62,7 @@ line level    source
   50          #if TK_DEBUG_EN
               void debug_gpio_config(void)
               {
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 2   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 2   
 
               #if 1
                   P2_MD0 &= ~GPIO_P21_MODE_SEL(0x03);
@@ -126,7 +126,7 @@ line level    source
                   P0_DRV7 = GPIO_P07_DRV_SEL(0x1);
               
                   // COM0 P27
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 3   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 3   
 
                   // 配置P2_7的输出功能，连接到LED的公共端0
                   FOUT_S27 = GPIO_FOUT_LED_COM0;
@@ -190,7 +190,7 @@ line level    source
  172   1      }
  173          
  174          #ifdef DEVELOPMENT_BOARD // 开发板上对应额触摸按键函数接口
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 4   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 4   
 
               /**
                * @brief  用户代码循环执行函数接口.（触摸按键扫描函数接口）
@@ -254,7 +254,7 @@ line level    source
                           long_touch_flag = 1; // 标记为长按
                       }
                       else
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 5   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 5   
 
                       {
                           // 如果是短按
@@ -318,7 +318,7 @@ line level    source
                                   __tk_scan();
                                   KeyOnOutput = __tk_key_flag;
               
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 6   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 6   
 
                                   if (TK_CH5_VALIB == KeyOnOutput)
                                   {
@@ -382,7 +382,7 @@ line level    source
                           if (cnt >= TK_LONG_KEY_TIME && cnt < 90)
                           {
                               printf("按键1长按\n");
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 7   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 7   
 
                           }
               
@@ -446,7 +446,7 @@ line level    source
                                   }
                               }
                               else if (LIGHT_CTL_MODE_MUILTY == light_ctl_mode)
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 8   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 8   
 
                               {
                                   // 如果当前是三色切换模式
@@ -510,7 +510,7 @@ line level    source
                                           }
                                           else
                                           {
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 9   
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 9   
 
                                               // 如果已经到了最大亮度
                                               tmr0_set_pwm_duty(cur_pwm_duty);
@@ -574,7 +574,7 @@ line level    source
                                           // 如果当前是在减小亮度
                                           if (cur_pwm_duty > 0)
                                           {
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 10  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 10  
 
                                               tmr0_set_pwm_duty(--cur_pwm_duty);
                                               tmr1_set_pwm_duty(cur_pwm_duty);
@@ -638,7 +638,7 @@ line level    source
               
                       case TK_CH5_VALIB:
                           // send_status_keyval(KEY_PRESS_LOOSE, KEY_TK3);
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 11  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 11  
 
                           break;
               
@@ -702,7 +702,7 @@ line level    source
  665   5                          break;
  666   5                      }
  667   4                  }
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 12  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 12  
 
  668   3                  else
  669   3                  {
@@ -766,7 +766,7 @@ line level    source
  727   3                  else if (TK_CH0_VALIB == KeyOnOutput)
  728   3                  {
  729   4                      // 如果按键--时钟被触摸
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 13  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 13  
 
  730   4      
  731   4                      // 如果不是同一个按键按下或是没有值，说明是短按
@@ -830,7 +830,7 @@ line level    source
  789   4                      // 如果按键--加被触摸
  790   4      
  791   4                      // 如果不是同一个按键按下或是没有值，说明是短按
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 14  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 14  
 
  792   4                      // send_status_keyval(KEY_PRESS_SHORT, KEY_TK6); // 发送带有状态的键值
  793   4      
@@ -894,7 +894,7 @@ line level    source
  851   6                              {
  852   7                                  // 如果当前是在减小亮度
  853   7                                  if (cur_pwm_duty > PWM_MIN_DUTY_LIGHT)
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 15  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 15  
 
  854   7                                  {
  855   8                                      tmr1_set_pwm_duty(--cur_pwm_duty);
@@ -958,7 +958,7 @@ line level    source
  912   8                                      // 如果已经到了最小亮度
  913   8                                      // tmr1_set_pwm_duty(cur_pwm_duty);
  914   8                                      // white_light_close();
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 16  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 16  
 
  915   8                                      // light_on_off_status = 0; // 更新灯光状态
  916   8                                  }
@@ -1022,7 +1022,7 @@ line level    source
  974   7                                  //     tmr0_set_pwm_duty(cur_pwm_duty);
  975   7                                  //     tmr1_set_pwm_duty(cur_pwm_duty);
  976   7                                  //     yellow_light_open();
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 17  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 17  
 
  977   7                                  //     white_light_open();
  978   7      
@@ -1086,7 +1086,7 @@ line level    source
 1035   3                  {
 1036   4                      // 如果之前是在增大亮度，下次长按要变成减小亮度
 1037   4                      light_adjust_add_sub_flag = 0; // 更新标志位
-C51 COMPILER V9.60.7.0   TK_USER                                                           08/08/2024 17:06:15 PAGE 18  
+C51 COMPILER V9.60.7.0   TK_USER                                                           08/09/2024 10:32:38 PAGE 18  
 
 1038   4                  }
 1039   3                  else

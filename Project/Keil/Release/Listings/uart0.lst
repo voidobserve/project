@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   UART0                                                             08/08/2024 17:06:14 PAGE 1   
+C51 COMPILER V9.60.7.0   UART0                                                             08/09/2024 10:32:37 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE UART0
@@ -62,7 +62,7 @@ line level    source
               
               #ifdef CIRCUIT_BOARD
               // uart0初始化
-C51 COMPILER V9.60.7.0   UART0                                                             08/08/2024 17:06:14 PAGE 2   
+C51 COMPILER V9.60.7.0   UART0                                                             08/09/2024 10:32:37 PAGE 2   
 
               // 波特率由宏 UART0_BAUDRATE 来决定
               void uart0_init(void)
@@ -126,7 +126,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
-C51 COMPILER V9.60.7.0   UART0                                                             08/08/2024 17:06:14 PAGE 3   
+C51 COMPILER V9.60.7.0   UART0                                                             08/09/2024 10:32:37 PAGE 3   
 
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

@@ -15,7 +15,7 @@
 #define KNOB_ON_OFF_PIN P15 // 检测旋钮是否开/关的引脚，0--开启，1--关闭
 
 #define ADC_MAX_VAL 1900 // adc检测到的最大的adc值(这里要经过实际测试，填写相应的adc值，范围：0~4095，实际肯定没有4095)
-#define ADC_MIN_VAL 270  // 设定的adc最小值，一旦小于等于这个值，则让灯光显示最低亮度
+#define ADC_MIN_VAL 100  // 设定的adc最小值，一旦小于等于这个值，则让灯光显示最低亮度
 #define ADC_STEP_VAL 100 // 设定adc跳变的值，超过这个值才认为adc值有变化，防止检测的adc有跳变
 
 // #define LIGHT_OPEN_CLOSE_TIME 700 // 开启/关闭的总时间（单位：ms）
