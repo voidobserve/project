@@ -9,7 +9,7 @@ bit light_ctl_mode = 0;
 
 // 灯光按键是否有按下的标志位
 //  0--未按下，1--按下
-volatile bit is_touch_key_light_press = 0; 
+volatile bit is_touch_key_light_press = 0;
 
 // 灯光按键是否长按的标志位
 // 0--未长按，1--长按
@@ -19,7 +19,7 @@ volatile bit is_touch_key_light_press = 0;
 bit light_on_off_status = 0;
 
 // 控制灯光的标志位
-volatile u8 light_control_flag = 0; 
+volatile u8 light_control_flag = 0;
 
 // 三色切换模式中，当前灯光的状态
 volatile u8 light_muilty_cur_status = LIGHT_MUILTY_CUR_OFF;
@@ -33,6 +33,9 @@ bit light_adjust_add_sub_flag = 0; // 最开始灯是最亮的，应该减小亮
 u16 cur_pwm_duty = 0;
 
 // 独立保存的驱动灯光的占空比（默认为最亮），精确到小数点后1位
-u16 cur_white_duty = PWM_MAX_DUTY_SINGLE_LIGHT; 
+u16 cur_white_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
 u16 cur_yellow_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
 u16 cur_yellow_white_duty = PWM_MAX_DUTY_MUILTY_LIGHT;
+
+bit touch_ctl_enable = 0;          // 触摸按键使能的标志位
+u16 touch_ctl_enable_time_cnt = 0; // 控制触摸按键多少时间后使能的标志位

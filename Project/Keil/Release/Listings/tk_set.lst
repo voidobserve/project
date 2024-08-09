@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 1   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE TK_SET
@@ -62,7 +62,7 @@ line level    source
   51          volatile unsigned char xdata __tk_ch_index[TK_CH_USE];
   52          
   53          // 用户不允许修改
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 2   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 2   
 
   54          unsigned long code __tk_adjust_line = TK_DATA_LINE;
   55          unsigned short code __tk_adjust_time = TK_ADJUST_TIME;
@@ -126,7 +126,7 @@ line level    source
                           TK5_THR_DATA,
                       },
               #endif
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 3   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 3   
 
  116          
  117          #if TK6_CH_EN
@@ -190,7 +190,7 @@ line level    source
                           14u,
                           TK14_THR_DATA,
                       },
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 4   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 4   
 
               #endif
  179          
@@ -254,7 +254,7 @@ line level    source
                       {
                           23u,
                           TK23_THR_DATA,
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 5   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 5   
 
                       },
               #endif
@@ -318,7 +318,7 @@ line level    source
  299   3                  {
  300   4                      P2_MD0 &= ~(0x3 << (__tk_ch_index[i] - 16) * 2);
  301   4                      P2_MD0 |= (0x3 << (__tk_ch_index[i] - 16) * 2);
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 6   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 6   
 
  302   4                  }
  303   3                  else
@@ -382,7 +382,7 @@ line level    source
  361           */
  362          void WUT_IRQHandler(void) interrupt WUT_IRQn
  363          {
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 7   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 7   
 
  364   1          // 进入中断设置IP，不可删除
  365   1          __IRQnIPnPush(WUT_IRQn);
@@ -446,7 +446,7 @@ line level    source
  420   1          /* 库函数初始化 */
  421   1          __tk_lib_init(); // 调用了库（闭源）
  422   1      
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 8   
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 8   
 
  423   1          /* 按键模块配置函数 */
  424   1          tk_init();
@@ -462,11 +462,11 @@ line level    source
  434           */
  435          void tk_handle(void)
  436          {
- 437   1          /* 用户代码初始化接口 */
- 438   1          user_init();
+ 437   1          /* 按键初始化 */
+ 438   1          tk_param_init();
  439   1      
- 440   1          /* 按键初始化 */
- 441   1          tk_param_init();
+ 440   1          /* 用户代码初始化接口 */
+ 441   1          user_init();
  442   1      
  443   1          check_light_ctl_mode();   // 上电后先检测要使用哪种灯光控制模式，最后，会配置驱动黄灯的PWM
  444   1          white_light_pwm_config(); // 配置驱动白灯的PWM
@@ -489,179 +489,196 @@ line level    source
  460   1          /* 系统主循环 */
  461   1          while (1)
  462   1          {
- 463   2              /* 按键扫描函数 */
- 464   2              __tk_scan(); // 使用了库里面的接口（闭源库）
- 465   2      
- 466   2              /* 用户循环扫描函数接口 */
- 467   2              user_handle();
- 468   2      
- 469   2              knob_handle();
- 470   2      
- 471   2      #if 1
- 472   2              if (is_touch_key_light_press) // 如果按键--灯光按下（单击）
- 473   2              {
- 474   3                  is_touch_key_light_press = 0;
- 475   3      
- 476   3                  // 如果是单色模式，只控制白灯
- 477   3                  if (LIGHT_CTL_MODE_SINGLE == light_ctl_mode)
- 478   3                  {
- 479   4                      if (light_on_off_status)
- 480   4                      {
- 481   5                          // 如果灯光已经开启
- 482   5                          // |-->关灯
- 483   5                          light_control_flag = LIGHT_WHITE_CLOSE;
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 9   
+ 463   2              // 上电2000ms后再使能，防止一上电就发送数据
+ 464   2              if (0 == touch_ctl_enable)
+ 465   2              {
+ 466   3                  /* 按键扫描函数 */
+ 467   3                  __tk_scan(); // 使用了库里面的接口（闭源库）
+ 468   3      
+ 469   3                  delay_ms(1);
+ 470   3                  touch_ctl_enable_time_cnt++;
+ 471   3                  if (touch_ctl_enable_time_cnt >= 2000)
+ 472   3                  {
+ 473   4                      touch_ctl_enable = 1; // 使能触摸按键的功能
+ 474   4                      __tk_key_flag = 0; // 使能后，清除之前扫描到的按键，一律作废
+ 475   4                  }
+ 476   3              }
+ 477   2              else
+ 478   2              {
+ 479   3                  /* 按键扫描函数 */
+ 480   3                  __tk_scan(); // 使用了库里面的接口（闭源库）
+ 481   3      
+ 482   3                  /* 用户循环扫描函数接口 */
+ 483   3                  user_handle();
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 9   
 
- 484   5      
- 485   5      #if USE_MY_DEBUG
+ 484   3              }
+ 485   2      
+ 486   2              knob_handle();
+ 487   2      
+ 488   2      #if 1
+ 489   2              if (is_touch_key_light_press) // 如果按键--灯光按下（单击）
+ 490   2              {
+ 491   3                  is_touch_key_light_press = 0;
+ 492   3      
+ 493   3                  // 如果是单色模式，只控制白灯
+ 494   3                  if (LIGHT_CTL_MODE_SINGLE == light_ctl_mode)
+ 495   3                  {
+ 496   4                      if (light_on_off_status)
+ 497   4                      {
+ 498   5                          // 如果灯光已经开启
+ 499   5                          // |-->关灯
+ 500   5                          light_control_flag = LIGHT_WHITE_CLOSE;
+ 501   5      
+ 502   5      #if USE_MY_DEBUG
                                   P24 = ~P24;
               #endif // #if USE_MY_DEBUG
- 488   5      
- 489   5                          light_on_off_status = 0; // 更新灯的状态
- 490   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态
- 491   5      
- 492   5                          // 下次长按要变成增大亮度
- 493   5                          light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
- 494   5                      }
- 495   4                      else
- 496   4                      {
- 497   5                          // 如果灯光已经关闭
- 498   5                          // |-->开灯
- 499   5                          light_control_flag = LIGHT_WHITE_OPEN;
- 500   5      
- 501   5      #if USE_MY_DEBUG
+ 505   5      
+ 506   5                          light_on_off_status = 0; // 更新灯的状态
+ 507   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态
+ 508   5      
+ 509   5                          // 下次长按要变成增大亮度
+ 510   5                          light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
+ 511   5                      }
+ 512   4                      else
+ 513   4                      {
+ 514   5                          // 如果灯光已经关闭
+ 515   5                          // |-->开灯
+ 516   5                          light_control_flag = LIGHT_WHITE_OPEN;
+ 517   5      
+ 518   5      #if USE_MY_DEBUG
                                   P24 = ~P24;
               #endif // #if USE_MY_DEBUG
- 504   5      
- 505   5                          light_on_off_status = 1; // 更新灯的状态
- 506   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态
- 507   5      
- 508   5                          if (cur_white_duty == PWM_MIN_DUTY_LIGHT)
- 509   5                          {
- 510   6                              // 下次长按要变成增大亮度
- 511   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
- 512   6                          }
- 513   5                          else
- 514   5                          {
- 515   6                              // 下次长按要变成减小亮度
- 516   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
- 517   6                          }
- 518   5                      }
- 519   4                  }
- 520   3                  else // 如果是三色切换模式，每次触摸到按键，在白->黄->黄白->关闭->白中循环切换
- 521   3                  {
- 522   4                      if (LIGHT_MUILTY_CUR_OFF == light_muilty_cur_status) // 白灯（从关灯的状态->白灯）
- 523   4                      {
- 524   5                          cur_pwm_duty = cur_white_duty;
- 525   5                          tmr1_set_pwm_duty(cur_pwm_duty); // 白灯
- 526   5                          white_light_open();              // 重新配置IO和定时器
- 527   5      
- 528   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_WHITE;
- 529   5                          light_on_off_status = 1; // 更新灯的状态
- 530   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态（从关灯状
+ 521   5      
+ 522   5                          light_on_off_status = 1; // 更新灯的状态
+ 523   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态
+ 524   5      
+ 525   5                          if (cur_white_duty == PWM_MIN_DUTY_LIGHT)
+ 526   5                          {
+ 527   6                              // 下次长按要变成增大亮度
+ 528   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
+ 529   6                          }
+ 530   5                          else
+ 531   5                          {
+ 532   6                              // 下次长按要变成减小亮度
+ 533   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
+ 534   6                          }
+ 535   5                      }
+ 536   4                  }
+ 537   3                  else // 如果是三色切换模式，每次触摸到按键，在白->黄->黄白->关闭->白中循环切换
+ 538   3                  {
+ 539   4                      if (LIGHT_MUILTY_CUR_OFF == light_muilty_cur_status) // 白灯（从关灯的状态->白灯）
+ 540   4                      {
+ 541   5                          cur_pwm_duty = cur_white_duty;
+ 542   5                          tmr1_set_pwm_duty(cur_pwm_duty); // 白灯
+ 543   5                          white_light_open();              // 重新配置IO和定时器
+ 544   5      
+ 545   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_WHITE;
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 10  
+
+ 546   5                          light_on_off_status = 1; // 更新灯的状态
+ 547   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态（从关灯状
              -态变成白灯，要发送该状态）
- 531   5      
- 532   5                          if (cur_pwm_duty == PWM_MIN_DUTY_LIGHT)
- 533   5                          {
- 534   6                              // 下次长按要变成增大亮度
- 535   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
- 536   6                          }
- 537   5                          else
- 538   5                          {
- 539   6                              // 下次长按要变成减小亮度
- 540   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
- 541   6                          }
- 542   5                      }
- 543   4                      else if (LIGHT_MUILTY_CUR_WHITE == light_muilty_cur_status) // 黄灯（从白灯->黄灯）
- 544   4                      {
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 10  
-
- 545   5                          cur_pwm_duty = cur_yellow_duty;
- 546   5      
- 547   5                          tmr1_set_pwm_duty(0); // 关闭白灯
- 548   5                          white_light_close();  // 重新配置IO和定时器
- 549   5      
- 550   5                          tmr0_set_pwm_duty(cur_pwm_duty); // 黄灯
- 551   5                          yellow_light_open();             // 重新配置IO和定时器
- 552   5      
- 553   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_YELLOW;
- 554   5                          light_on_off_status = 1; // 更新灯的状态
- 555   5                          send_key_status(0x00);   // 发送不带按键信息的数据
- 556   5      
- 557   5                          if (cur_pwm_duty == PWM_MIN_DUTY_LIGHT)
- 558   5                          {
- 559   6                              // 下次长按要变成增大亮度
- 560   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
- 561   6                          }
- 562   5                          else
- 563   5                          {
- 564   6                              // 下次长按要变成减小亮度
- 565   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
- 566   6                          }
- 567   5                      }
- 568   4                      else if (LIGHT_MUILTY_CUR_YELLOW == light_muilty_cur_status) // 黄白灯，需要注意最大亮度的
-             -占空比为60%（从黄灯->黄白灯）
- 569   4                      {
- 570   5                          cur_pwm_duty = cur_yellow_white_duty;
- 571   5                          tmr0_set_pwm_duty(cur_pwm_duty);
- 572   5                          tmr1_set_pwm_duty(cur_pwm_duty);
+ 548   5      
+ 549   5                          if (cur_pwm_duty == PWM_MIN_DUTY_LIGHT)
+ 550   5                          {
+ 551   6                              // 下次长按要变成增大亮度
+ 552   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
+ 553   6                          }
+ 554   5                          else
+ 555   5                          {
+ 556   6                              // 下次长按要变成减小亮度
+ 557   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
+ 558   6                          }
+ 559   5                      }
+ 560   4                      else if (LIGHT_MUILTY_CUR_WHITE == light_muilty_cur_status) // 黄灯（从白灯->黄灯）
+ 561   4                      {
+ 562   5                          cur_pwm_duty = cur_yellow_duty;
+ 563   5      
+ 564   5                          tmr1_set_pwm_duty(0); // 关闭白灯
+ 565   5                          white_light_close();  // 重新配置IO和定时器
+ 566   5      
+ 567   5                          tmr0_set_pwm_duty(cur_pwm_duty); // 黄灯
+ 568   5                          yellow_light_open();             // 重新配置IO和定时器
+ 569   5      
+ 570   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_YELLOW;
+ 571   5                          light_on_off_status = 1; // 更新灯的状态
+ 572   5                          send_key_status(0x00);   // 发送不带按键信息的数据
  573   5      
- 574   5                          white_light_open(); // 之前关闭了白灯，现在要重新配置IO和定时器
- 575   5      
- 576   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_YELLOW_WHITE;
- 577   5                          light_on_off_status = 1; // 更新灯的状态
- 578   5                          send_key_status(0x00);   // 发送不带按键信息的数据
- 579   5      
- 580   5                          if (cur_pwm_duty == PWM_MIN_DUTY_LIGHT)
- 581   5                          {
- 582   6                              // 下次长按要变成增大亮度
- 583   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
- 584   6                          }
- 585   5                          else
- 586   5                          {
- 587   6                              // 下次长按要变成减小亮度
- 588   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
- 589   6                          }
- 590   5                      }
- 591   4                      else if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status) // 关灯（从黄白灯->关灯
-             -）
- 592   4                      {
- 593   5                          cur_pwm_duty = 0;
- 594   5                          tmr0_set_pwm_duty(cur_pwm_duty);
- 595   5                          tmr1_set_pwm_duty(cur_pwm_duty);
- 596   5                          white_light_close();
- 597   5                          yellow_light_close();
- 598   5      
- 599   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_OFF;
- 600   5                          light_on_off_status = 0; // 更新灯的状态
- 601   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态
- 602   5      
- 603   5                          // // 下次长按要变成减小亮度
- 604   5                          // light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
-C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 10:32:38 PAGE 11  
+ 574   5                          if (cur_pwm_duty == PWM_MIN_DUTY_LIGHT)
+ 575   5                          {
+ 576   6                              // 下次长按要变成增大亮度
+ 577   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
+ 578   6                          }
+ 579   5                          else
+ 580   5                          {
+ 581   6                              // 下次长按要变成减小亮度
+ 582   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
+ 583   6                          }
+ 584   5                      }
+ 585   4                      else if (LIGHT_MUILTY_CUR_YELLOW == light_muilty_cur_status) // 黄白灯，需要注意最大亮度的
+             -占空比为60%（从黄灯->黄白灯）
+ 586   4                      {
+ 587   5                          cur_pwm_duty = cur_yellow_white_duty;
+ 588   5                          tmr0_set_pwm_duty(cur_pwm_duty);
+ 589   5                          tmr1_set_pwm_duty(cur_pwm_duty);
+ 590   5      
+ 591   5                          white_light_open(); // 之前关闭了白灯，现在要重新配置IO和定时器
+ 592   5      
+ 593   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_YELLOW_WHITE;
+ 594   5                          light_on_off_status = 1; // 更新灯的状态
+ 595   5                          send_key_status(0x00);   // 发送不带按键信息的数据
+ 596   5      
+ 597   5                          if (cur_pwm_duty == PWM_MIN_DUTY_LIGHT)
+ 598   5                          {
+ 599   6                              // 下次长按要变成增大亮度
+ 600   6                              light_adjust_add_sub_flag = 1; // 更新用于控制调整灯光亮度的标志位
+ 601   6                          }
+ 602   5                          else
+ 603   5                          {
+ 604   6                              // 下次长按要变成减小亮度
+ 605   6                              light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
+C51 COMPILER V9.60.7.0   TK_SET                                                            08/09/2024 16:05:49 PAGE 11  
 
- 605   5                      }
- 606   4                  }
- 607   3              }
- 608   2      #endif
- 609   2      
- 610   2      #if 0  // 在demo板上进行开灯和关灯的功能测试--测试通过
+ 606   6                          }
+ 607   5                      }
+ 608   4                      else if (LIGHT_MUILTY_CUR_YELLOW_WHITE == light_muilty_cur_status) // 关灯（从黄白灯->关灯
+             -）
+ 609   4                      {
+ 610   5                          cur_pwm_duty = 0;
+ 611   5                          tmr0_set_pwm_duty(cur_pwm_duty);
+ 612   5                          tmr1_set_pwm_duty(cur_pwm_duty);
+ 613   5                          white_light_close();
+ 614   5                          yellow_light_close();
+ 615   5      
+ 616   5                          light_muilty_cur_status = LIGHT_MUILTY_CUR_OFF;
+ 617   5                          light_on_off_status = 0; // 更新灯的状态
+ 618   5                          send_key_status(0x00);   // 发送不带按键信息的数据，主要是发送当前的灯光状态
+ 619   5      
+ 620   5                          // // 下次长按要变成减小亮度
+ 621   5                          // light_adjust_add_sub_flag = 0; // 更新用于控制调整灯光亮度的标志位
+ 622   5                      }
+ 623   4                  }
+ 624   3              }
+ 625   2      #endif
+ 626   2      
+ 627   2      #if 0  // 在demo板上进行开灯和关灯的功能测试--测试通过
                       white_light_close();
                       delay_ms(500);
                       white_light_open();
                       delay_ms(500);
               #endif // 在demo板上进行开灯和关灯的功能测试--测试通过
- 616   2      
- 617   2              /* 喂狗 :建议不要关闭看门狗，默认2s复位*/
- 618   2              // WDT_KEY = WDT_KEY_VAL(0xAA);
- 619   2          }
- 620   1      }
- 621          
- 622          /*************************** (C) COPYRIGHT 2022 TAIXIN-IC ***** END OF FILE *****/
+ 633   2      
+ 634   2              /* 喂狗 :建议不要关闭看门狗，默认2s复位*/
+ 635   2              // WDT_KEY = WDT_KEY_VAL(0xAA);
+ 636   2          }
+ 637   1      }
+ 638          
+ 639          /*************************** (C) COPYRIGHT 2022 TAIXIN-IC ***** END OF FILE *****/
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1274    ----
+   CODE SIZE        =   1330    ----
    CONSTANT SIZE    =     46    ----
    XDATA SIZE       =     72    ----
    PDATA SIZE       =   ----    ----

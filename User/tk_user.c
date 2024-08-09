@@ -671,6 +671,7 @@ void user_handle(void)
                 // cnt = 0;
                 break;
             }
+
             if (cnt > TK_LONG_KEY_TIME) // 如果长按超过了这里设置的时间
             {
                 long_touch_flag = 1; // 标记为长按
@@ -1078,6 +1079,7 @@ void user_handle(void)
         long_touch_flag = 0; // 清除标志位
         cnt = 0;
         KeyOld = 0;
+        __tk_key_flag = 0;
     }
 #endif // 长按相关的功能
 }

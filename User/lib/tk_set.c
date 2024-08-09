@@ -434,11 +434,11 @@ void tk_param_init(void)
  */
 void tk_handle(void)
 {
-    /* 用户代码初始化接口 */
-    user_init();
-
     /* 按键初始化 */
     tk_param_init();
+
+    /* 用户代码初始化接口 */
+    user_init();
 
     check_light_ctl_mode();   // 上电后先检测要使用哪种灯光控制模式，最后，会配置驱动黄灯的PWM
     white_light_pwm_config(); // 配置驱动白灯的PWM
@@ -460,11 +460,28 @@ void tk_handle(void)
     /* 系统主循环 */
     while (1)
     {
-        /* 按键扫描函数 */
-        __tk_scan(); // 使用了库里面的接口（闭源库）
+        // 上电2000ms后再使能，防止一上电就发送数据
+        if (0 == touch_ctl_enable)
+        {
+            /* 按键扫描函数 */
+            __tk_scan(); // 使用了库里面的接口（闭源库）
 
-        /* 用户循环扫描函数接口 */
-        user_handle();
+            delay_ms(1);
+            touch_ctl_enable_time_cnt++;
+            if (touch_ctl_enable_time_cnt >= 2000)
+            {
+                touch_ctl_enable = 1; // 使能触摸按键的功能
+                __tk_key_flag = 0; // 使能后，清除之前扫描到的按键，一律作废
+            }
+        }
+        else
+        {
+            /* 按键扫描函数 */
+            __tk_scan(); // 使用了库里面的接口（闭源库）
+
+            /* 用户循环扫描函数接口 */
+            user_handle();
+        }
 
         knob_handle();
 

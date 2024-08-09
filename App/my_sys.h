@@ -5,12 +5,11 @@
 #include "include.h"   // 包含芯片官方提供的头文件
 #include "my_config.h" // 包含自定义配置的头文件
 
-#define PWM_MAX_DUTY_SINGLE_LIGHT 700 // 单色时，最高占空比为 70.0%
-#define PWM_MAX_DUTY_MUILTY_LIGHT 600 // 黄白色时，最高占空比为 60.0%
-#define PWM_MIN_DUTY_LIGHT 100         // 长按和旋钮调节灯光亮度时，最小亮度为 10.0%
+#define PWM_MAX_DUTY_SINGLE_LIGHT 700      // 单色时，最高占空比为 70.0%
+#define PWM_MAX_DUTY_MUILTY_LIGHT 600      // 黄白色时，最高占空比为 60.0%
+#define PWM_MIN_DUTY_LIGHT 100             // 长按和旋钮调节灯光亮度时，最小亮度为 10.0%
 #define PWM_MIN_DUTY_YELLOW_WHITE_LIGHT 50 // 双色下，最小亮度为 5%
-#define PWM_ADJUST_DUTY_TIME_STEP 30 // 每次调节PWM的时间间隔（单位：100us）
-
+#define PWM_ADJUST_DUTY_TIME_STEP 30       // 每次调节PWM的时间间隔（单位：100us）
 
 #define KNOB_ON_OFF_PIN P15 // 检测旋钮是否开/关的引脚，0--开启，1--关闭
 
@@ -37,6 +36,9 @@ extern u16 cur_pwm_duty; // 当前驱动灯光的占空比，精确到小数点�
 extern u16 cur_white_duty;
 extern u16 cur_yellow_duty;
 extern u16 cur_yellow_white_duty;
+
+extern bit touch_ctl_enable;          // 触摸按键使能的标志位
+extern u16 touch_ctl_enable_time_cnt; // 控制触摸按键多少时间后使能的标志位
 
 // 按键标号的定义
 enum

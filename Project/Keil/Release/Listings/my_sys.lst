@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   MY_SYS                                                            08/09/2024 10:32:38 PAGE 1   
+C51 COMPILER V9.60.7.0   MY_SYS                                                            08/09/2024 15:55:05 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MY_SYS
@@ -21,7 +21,7 @@ line level    source
    9          
   10          // 灯光按键是否有按下的标志位
   11          //  0--未按下，1--按下
-  12          volatile bit is_touch_key_light_press = 0; 
+  12          volatile bit is_touch_key_light_press = 0;
   13          
   14          // 灯光按键是否长按的标志位
   15          // 0--未长按，1--长按
@@ -31,7 +31,7 @@ line level    source
   19          bit light_on_off_status = 0;
   20          
   21          // 控制灯光的标志位
-  22          volatile u8 light_control_flag = 0; 
+  22          volatile u8 light_control_flag = 0;
   23          
   24          // 三色切换模式中，当前灯光的状态
   25          volatile u8 light_muilty_cur_status = LIGHT_MUILTY_CUR_OFF;
@@ -45,20 +45,25 @@ line level    source
   33          u16 cur_pwm_duty = 0;
   34          
   35          // 独立保存的驱动灯光的占空比（默认为最亮），精确到小数点后1位
-  36          u16 cur_white_duty = PWM_MAX_DUTY_SINGLE_LIGHT; 
+  36          u16 cur_white_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
   37          u16 cur_yellow_duty = PWM_MAX_DUTY_SINGLE_LIGHT;
   38          u16 cur_yellow_white_duty = PWM_MAX_DUTY_MUILTY_LIGHT;
+  39          
+  40          bit touch_ctl_enable = 0;          // 触摸按键使能的标志位
+  41          u16 touch_ctl_enable_time_cnt = 0; // 控制触摸按键多少时间后使能的标志位
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =   ----    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =     10    ----
+   XDATA SIZE       =     12    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =      4    ----
+   BIT SIZE         =      5    ----
 END OF MODULE INFORMATION.
+
+C51 COMPILER V9.60.7.0   MY_SYS                                                            08/09/2024 15:55:05 PAGE 2   
 
 
 C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

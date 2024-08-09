@@ -45,7 +45,7 @@
 #define TK_UPDATE_CNT                   ( 15 )                // BASE 更新时间(单位：10ms)
 #define TK_LONG_KEY_TIME                ( 75 )                // 长按键时间(单位：10ms)
 #define TK_VALID_TIME                   ( 500 )               // 按键有效时间(单位：10ms)
-#define TK_NM_CM_CNT                    ( 4 )                 // 按键消抖次数
+#define TK_NM_CM_CNT                    ( 4 )                 // 按键消抖次数（默认是4次）
 #define TK_NOISE_VAL                    ( 10 )                // 按键噪声值
 #define TK_CM_VALE                      ( 5 )                 // 按键释放迟滞
 #define TK_CH_MAX                       ( 26 )                // 配置最大按键个数
@@ -286,7 +286,7 @@
  * TK11 通道灵敏度
  */
 #define TK11_CH_EN                      (1)
-#define TK11_THR_DATA                   (100)
+#define TK11_THR_DATA                   (150)
 /*
  * TK12 使能位
  * TK12 通道灵敏度
